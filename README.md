@@ -20,13 +20,11 @@ Modify the layout by adding the filename to the loadkeys command
 $ ls /usr/share/kbd/i386/querty
 
 # Verify the boot mode. BIOS|UEFI
--------------------------------
 Run this command if you are unsure of the boot mode support by your motherboard
 `$ ls /sys/firmware/efi/efivars`
 If the directory does not exist the system may be booted in BIOS or CSM mode
 
 # Connecting to the internet
----------------------------
 Ensure your network interface is lsited and enabled
 `$ ip link`
 Connect to the network by plugging in an ethernet cable
@@ -34,7 +32,11 @@ If you are using wireless you need to connect with wireless manager
 By default he Arch Live Media should come with the command wifi-menu 
 to allow for easy connection to wireless access points
 `$ wifi-menu`
-TODO(add install of wifi on install)
+Verify connection by attempting to ping a website
+`$ ping google.com`
+`Ctrl-C` to cancel command
+If there is a working connection the ping should say it has recieved 
+packges back from address
 # Update the System Clock
 It could be important to set the system clock to allow for filesystem 
 continuity or to avoid package-key out of date errors
@@ -43,11 +45,10 @@ You can check if the service is active by running the following
 `$ timedatectl status`
 
 # Paritioning the disks
-----------------------------
 Verify and identify partitions and devices that you want to use
-# lsblk
+`$ lsblk`
 or
-# fdisk -l
+`$ fdisk -l`
 Results ending in `rom`, `loop`, and `airroot` should be ignored as they 
 are part of the installation media
 Note that all drives fall under `/dev` in the filesystem
@@ -67,7 +68,6 @@ more then you should either match of have a bigger swap partition than installed
 `$ cfdisk /dev/<device>`
 
 # Format the partitions
----------------------
 Format the root partition as ext4 filesystem
 `ext4` is the recommended filesystem for normal linux installations
 There are other potential options such `zsh` and `btrfs`, this guide will
@@ -78,8 +78,7 @@ Format the swap partition
 Format the EFI boot partiton if you have one
 `$ mkfs.fat /dev/<boot_partition>`
 
-# Mount the partitions
---------------------
+Mount the partitions
 Mount the root pratition
 `$ mount /dev/<root_partition> /mnt`
 If you have an EFI system mount it
@@ -88,7 +87,6 @@ Initialize swap partition
 `$ swapon /dev/<swap_partition>`
 
 # Installation
--------------
 You may want to maximize download speed from Arch mirrors to
 make the installation as painless as possible
 The mirror is found at `/etc/pacman.d/mirrorlist`
@@ -120,7 +118,6 @@ You can use a different package instead of the standard linux kernel if you wish
 `s $ pacstrap /mnt base linux linux-firmware`
 
 # Configure the system
---------------------
 Generate fstab to auto-mount partitions based on currently mounted 
 partitions
 `$ genfstab -U /mnt >> /mnt/etc/fstab`
@@ -140,28 +137,43 @@ Another few useful packages to install at this point would be
 `htop` hardware and proccess monitor
 `i7z` extensive cpu monitor
 `nvtop` if you use nvidia graphics for gpu proccess and usage monitoring
+If you are setup the internet connection with `wifi-menu` you are probably 
+relying on a wireless connection, to be able to have a connection until you 
+install graphical networking tools install `netctl` and `dialog` to get 
+wi-fi menu for the install, note you may have to reinput network password
 
 Set the time zome to your own for the system
 `$ lf -sf /usr/share/zoneinfo/<Region>/<City> /etc/localtime`
+
 Generate adjtime
 `$ hwclock --systohc`
+
 Language Localization, this is for text rendering for American English
 open locale with a text editor and uncomment
 `en_US.UTF-8`
 `UTF-8`
 `$ emacs /etc/locale.gen`
+
 Generate the locale
 `$ locale-gen`
+
 Create locale.conf file and set the language accordingly
 `$ LANG=en_US.UTF-8 > /etc/locale.conf`
 
+Add x32 Packages to pacman
+Uncomment from `/etc/pacman.conf`
+`
+#[multilib]
+#Include = /etc/pacman.d/mirrorlist
+`
+For fun also remove uncomment `Color` from `/etc/pacman.conf`
+to beutify the output
+Also adding `ILoveCandy` to the same file will do fun things
 # Network configuration
-----------------------
 Create a hostname file and set a hostname
 `$ <hostname> > /etc/hostname`
 
 # Root password
--------------
 Set the root password
 **WARNING** Failiure to set a password for at least 1 user may result in an unsable 
 install! You have been warned!
@@ -175,7 +187,6 @@ this guide will cover the installation one of the most popular, the
 GRand Unified Bootloader, GRUB for short
 
 # GRUB
------------
 Install grub
 `$ pacman -S grub`
 
@@ -208,7 +219,6 @@ here because `intel_cstate=1` being to high has been known to soft/hard-lock
 computers with intel cpus on linux
 `$ grub-mkconfig -o /boot/grub/grub.cfg`
 # Reboot
-------
 Exit the chroot enviorment
 Ctrl-D
 or
@@ -220,7 +230,6 @@ Login with root on login if all goes well
 You should now have a working system, however very barebones
 
 # Xorg
-------
 You probably want a graphical installation so a display server is neccecary
 The most popular two is xorg and wayland, this guide will only cover xorg
 xorg-apps may be neccecary depending on your needs
@@ -268,8 +277,8 @@ Write the following into the file
 	Option "AccelerationThreshold" "0"
 EndSection`
 
-KDE Plasma
------------
+# KDE Plasma
+Install
 KDE Plasma is a very powerful and stylish modern desktop enviornment
 Usually it comes with a lot of apps that you might not neccecarilly need
 In true arch spirit this guide will work from the ground up and install 
@@ -286,13 +295,15 @@ kde-applications        //Full installation of all KDE applications
 kde-applications-meta   //KDE install all KDE applications as a dependency
 `$ pacman -S plasma-desktop`
 
+Applications
 Life is going to be difficult without a terminal `konsole` is the recommended
 but I prefer simple terminal `st`
 `$ pacman -S st`
 
 Life will also be easier with a decent file manager, I like KDE's dolphin
-`$ pacman -S dolphine
-`
+`$ pacman -S dolphin`
+
+Display Manager
 To start Plasma you need to use Xorg xinit/startx or a display manager
 A display manager is easiest
 Install the recommended display manager SDDM, it requires minimal configuration
@@ -300,15 +311,123 @@ Install the recommended display manager SDDM, it requires minimal configuration
 
 To be able to configure SDDM in system settings install the kcm package
 `$ pacman -S sddm-kcm`
-TODO(Install network manager for plasma)
-TODO(Install bluetooth)
-TODO(Install pulse audio)
-TODO(Install aur helper)
-Users
------
-# useradd -m -G <additional_groups> -s /bin/bash <username>
 
+Sound 
+Personally in the system tray I prefer `kmix to the default` `plasma-pa`
+`$ pacman -S kmix`
 
+Network
+To be able to configure and connect to networks from within the desktop 
+enviornment you should install `plasma-nm` wifi-menu requires root 
+privillages and needs to be connected every boot so that is not ideal
+`$ pacman -S plasma-nm`
+Bluetooth
+If you want to be able to connect to bluetooth devices from within plasma
+then install the bluedevil package
+`$ pacman -S bluedevil`
 
+# Other
+Bluetooth
+If you did want to use bluetooth then set that up by installing `bluez` 
+and `bluez-utils` packages
+`$ pacman -S bluez bluez-utils`
 
+Enable the daemon to allow bluetooth to run at startup
+`systemctl start bluetooth.service`
 
+Pulseaudio
+If you want to use bluetooth headphones install `pulesaudio` and 
+`pulseaudio-bluetooth`
+`$ pacman -S pulseaudio pulseaudio-bluetooth`
+
+A nice to have is `pulseeffects` to allow you to control annoying 
+and poor quality audio on that video or series you desprately need to watch
+`$ pacman -S puleseffects`
+
+# AUR
+The arch user repository is a massive collection of community submitted packages,
+for many arch users you simply cannot do without it
+yay is a popular helper that simplifies the experience to treat the proccess 
+more like a standard pacman, but with more commands and mirrors, namely the 
+AUR itself
+
+Before you do anything with the AUR you are going to need the `base-devel` package
+Note: this has a lot of really useful packages related to software development and 
+package compilation, in general most arch uses are going to want it except in the 
+most minimal edge-case installations
+`pacman -S base-devel`
+
+To get started install yay, first, `wget` it, since you don't have a user setup
+`/tmp` will do fine for this
+`$ cd /tmp`
+`$ wget -O /tmp/yay.tar.gz https://aur.archlinux.org/cgit/aur.git/snapshot/yay.tar.gz`
+
+Extract the tarball
+`$ tar xfv yay.tar.gz`
+`cd` into the `yay` folder, then make and install the package with dependencies
+Note: specify to remove make dependencies if storage space is a concern, it can always 
+be cleaned up later with `pacman -Scc`
+`makepkg -si`
+
+Usage
+Simply use the `yay` command as if it were pacman, all normal commands will work
+
+# Users
+Creating a User
+To use your installation you are going to want to create yourself a user, running 
+everything as root is a REALLY REALLY bad idea because it means all apps and 
+software that runs will have unrestricted, no-confirmation access to your whole 
+computer, leaving a massive gaping security hole in your system and the install 
+liable to random and unexpected damage (data damage)
+`$ useradd -m -G wheel -s /bin/zsh <new_username>`
+Note: `wheel` is the system administrators group and will give you access to certain 
+system modifacation without first going through root
+zsh is my the shell I like to use, if you are not bothered `bash` or `sh` are 
+the preinstalled ones, `sh` I consider to be better than bash
+
+Give your new user a password so you can log in
+`$ passwd <new_username>`
+
+# Sudo
+It was mentioned before that running everything as root is bad, but every now and again 
+you need temporary root privillages
+If you did not install the base-devel package install sudo now
+`$ pacman -S sudo`
+
+Setup
+Edit the sudo configuration with `visudo`, I recommend changing the EDITOR to nano 
+if you cannot get along with vi, I set mine to nano
+For first time set the editor by preixing visudo with 
+`EDITOR=nano`
+
+To allow users of group `wheel` sudo access make sure that this is uncommented 
+somewhere in the file
+`%wheel      ALL=(ALL) ALL`
+
+To allow a single user to have full root privillages with sudo add the following 
+`<username>      ALL=(ALL) ALL`
+Usage
+To use sudo simple prefix the desired command with `sudo`
+You will be then prompted for the root password, or if you set a specific user 
+to have sudo access then it may just ask for the user password
+
+# Bonus
+I personally like using a different window manager for plasma, kwin is great, but it is
+not quite enough for my needs.
+Install the window manager of your choice, I chose `awesome`
+Setup a new xsession by first making a copy of `/usr/share/xsessions/plasma.desktop` 
+and naming it somebody ending with `.desktop`
+Edit the newly created file and modify the line starting with `Exec` to be the following 
+`Exec=env KDEWM=/usr/bin/<window_manager_executable> /usr/bin/startplasma-x11`
+Then change the name to be something descriptive
+To use, when you reboot look in the corner of SDDM, and change the session to the desired
+
+# End
+You should now have arch pretty much installed, there will be many more changes to make 
+and packages to install, but this is where the guide ends. 
+Just remember, arch is only as stable as you make it, and arch does not do partial upgrades
+If the system is unstable after a package install, do a full system upgrade with 
+`$ pacman -Syu`
+If the system is still unstable then try a different graphics driver, and also try 
+installing proccessor microcode updates. These are loaded from the kernel at boot time
+and do not overwrite any firmware, it is completely safe to do.
