@@ -271,7 +271,7 @@ Write the following into the file
 `Section "InputClass"
 	Identifier "My Mouse"
 	MatchIsPointer "yes"
-# set the following to 1 1 0 respectively to disable acceleration.
+	set the following to 1 1 0 respectively to disable acceleration.
 	Option "AccelerationNumerator" "1"
 	Option "AccelerationDenominator" "1"
 	Option "AccelerationThreshold" "0"
@@ -295,7 +295,7 @@ kde-applications        //Full installation of all KDE applications
 kde-applications-meta   //KDE install all KDE applications as a dependency
 `$ pacman -S plasma-desktop`
 
-Applications
+### Applications
 Life is going to be difficult without a terminal `konsole` is the recommended
 but I prefer simple terminal `st`
 `$ pacman -S st`
@@ -303,7 +303,13 @@ but I prefer simple terminal `st`
 Life will also be easier with a decent file manager, I like KDE's dolphin
 `$ pacman -S dolphin`
 
-Display Manager
+You are most certainly going to miss a browser, get one now
+`$ pacman -S chromium`
+Note: Later on this guide goes over the AUR briefly, after that you can install 
+the more normal `google-chrome` which has slightly more features that chromium
+and is more stable
+
+### Display Manager
 To start Plasma you need to use Xorg xinit/startx or a display manager
 A display manager is easiest
 Install the recommended display manager SDDM, it requires minimal configuration
@@ -312,22 +318,22 @@ Install the recommended display manager SDDM, it requires minimal configuration
 To be able to configure SDDM in system settings install the kcm package
 `$ pacman -S sddm-kcm`
 
-Sound 
+### Sound 
 Personally in the system tray I prefer `kmix to the default` `plasma-pa`
 `$ pacman -S kmix`
 
-Network
+### Network
 To be able to configure and connect to networks from within the desktop 
 enviornment you should install `plasma-nm` wifi-menu requires root 
 privillages and needs to be connected every boot so that is not ideal
 `$ pacman -S plasma-nm`
-Bluetooth
+###Bluetooth
 If you want to be able to connect to bluetooth devices from within plasma
 then install the bluedevil package
 `$ pacman -S bluedevil`
 
 # Other
-Bluetooth
+###Bluetooth
 If you did want to use bluetooth then set that up by installing `bluez` 
 and `bluez-utils` packages
 `$ pacman -S bluez bluez-utils`
@@ -335,7 +341,7 @@ and `bluez-utils` packages
 Enable the daemon to allow bluetooth to run at startup
 `systemctl start bluetooth.service`
 
-Pulseaudio
+###Pulseaudio
 If you want to use bluetooth headphones install `pulesaudio` and 
 `pulseaudio-bluetooth`
 `$ pacman -S pulseaudio pulseaudio-bluetooth`
@@ -369,11 +375,11 @@ Note: specify to remove make dependencies if storage space is a concern, it can 
 be cleaned up later with `pacman -Scc`
 `makepkg -si`
 
-Usage
+###Usage
 Simply use the `yay` command as if it were pacman, all normal commands will work
 
 # Users
-Creating a User
+###Creating a User
 To use your installation you are going to want to create yourself a user, running 
 everything as root is a REALLY REALLY bad idea because it means all apps and 
 software that runs will have unrestricted, no-confirmation access to your whole 
@@ -394,7 +400,7 @@ you need temporary root privillages
 If you did not install the base-devel package install sudo now
 `$ pacman -S sudo`
 
-Setup
+### Setup
 Edit the sudo configuration with `visudo`, I recommend changing the EDITOR to nano 
 if you cannot get along with vi, I set mine to nano
 For first time set the editor by preixing visudo with 
