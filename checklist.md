@@ -9,6 +9,7 @@ zsh
 
 # System Packages
 These are packages to make use of common functions that computers have and you are likely
+to want to use
 grub
 htop
 i7z
@@ -18,7 +19,15 @@ nvidia
 nvidia-utils
 nvtop
 os-prober
-to want to use
+pulseaudio
+pulseaudio-bluetooth
+bluez
+bluez-utils
+lua
+clang
+dialog
+netcl
+ntfs-3g
 
 # Desktop Enviornment and App Packages
 These are the packages that for me, build up a nice desktop enviornment
@@ -38,6 +47,7 @@ lutris
 ntfs-3g
 progress
 qemu
+ovmf
 steam
 wine
 zsh-syntax-highlighting
