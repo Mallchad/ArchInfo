@@ -28,8 +28,8 @@ List availible keyboard layouts with this command
 If you have a particular keyboard layout in mind you can grep the output to search
 for your desired layout
 $ ~ls /usr/share/kbd/keymaps/**/*.map.gz | grep "uk\|gb"~
-Modify the layout by adding the filename to the loadkeys command  
-$ loadkeys /usr/share/kbd/i386/querty
+Modify the layout by loading the desired keymap file
+$ ~loadkeys /usr/share/kbd/keymaps/i386/querty~
 This only works in tty and does not persist across reboot.
 A more persistent solution is to edit ~/etc/vconsole.conf~ and append a
 like like the following.
@@ -84,7 +84,7 @@ In the case of factory new machines the time may have never been set.
 You can check if the service is active by running the following  
 ~$ timedatectl status~
   
-* Partitioning the disks
+* Disk Setup
 **  Traditional Method
 Verify and identify partitions and devices that you want to use  
 ~$ lsblk~
@@ -110,7 +110,7 @@ more then you should either match of have a bigger swap partition than installed
 There is also an alternative to swap partitions, swap files
 These are somewhat more flexible in usage and messes with the partition table less
 ~$ cfdisk /dev/<device>~
-** Logical Volume Manager
+** LVM (Logical Volume Manager)
 Logical Volume Manager is an alternative way of managing storage that allows
 for somewhat more flexibility, as well as providing some extra oddities like
 management disk encryption, raid, and drive cache acceleration.
@@ -130,8 +130,11 @@ This abstraction allows for massively improved flexibility of the storage
 as storage no longer needs to be contiguous or stored in the same location
 
 A volume group can be associated with a physical partition using this command
-~vgcreate <group_name> <physical_partition>~
-
+~vgcreate <name_for_group> <physical_volumes>~
+By you can bind multiple physical volumes by appending them to the command.
+This is useful for creating raid and extended logical volumes
+For example.
+$ ~vgcreate sd-lvm /dev/sda1 /dev/sdb1~
 Volume groups detected can be checked with the following ocmmand
 ~vgs~
 
@@ -139,11 +142,17 @@ Volume groups detected can be checked with the following ocmmand
 Logical volumes appear externally as partitions and has all the information
 required to function as a block partition
 Here is an example of how to create a logical volume
-~lvcreate -L 300G volume_group1 -n root_partition~
+~lvcreate -L 300G <desired_volume_group> -n <name_for_volume_group~
 If you want to completely fill the remaining volume use this form instead
 ~lvcreate -l +100%FREE <volume_group> -n <new_logical_volume_name>~
+You can create a RAID volume by using the --type option.
+Below is an example using raid1
+~lvcreate --type raid1 --mirrors 1 -l 20G -n some_raid_volume a_volume_group /dev/sda2 /dev/sdb2~
 You can verify created logical volumes with this command
 ~lvs~`
+*** Finishing Up
+You can now format and use the partitions as normal by finding the logical volume name in the ~/dev/~ directory
+** Bcache
 * Format the partitions
 Format the root partition as ext4 filesystem  
 ~ext4~ is the recommended filesystem for normal linux installations
@@ -154,14 +163,38 @@ Format the swap partition
 ~$ mkswap /dev/<swap_partition>~
 Format the EFI boot partiton if you have one  
 ~$ mkfs.fat /dev/<boot_partition>~
-TODO(mallchad) should mention swapfiles as an alternative to swap partition  
+TODO(mallchad) should mention swapfiles as an alternative to swap partition
+TODO(mallchad) mention UEFI vs mbr
 Mount the partitions  
 Mount the root pratition  
 ~$ mount /dev/<root_partition> /mnt~
 If you have an EFI system mount it  
 ~$ mount /dev/<boot_partition> /mnt/boot~
-Initialize swap partition  
+
+** Swap
+*** Swapfile
+Swapfiles are a more flexible alternative to swap partitions, even being
+able to be allocated on the fly
+The most portable way to allocate a swapfile is using dd
+To create a 512 MB swap partition run the following command
+of= specifies the "output file" or location of the swapfile
+The location of the swapfile does not matter too much
+$ ~dd if=/dev/zero of=/swapfile bs=1M count=512 status=progress~
+
+Set the right permissions to prevent severe  vulnerabilities and exploits
+$ ~chmod 600~
+
+Format the swapfile
+
+$ ~mkswap /swapfile~
+Initialize swap partition
 ~$ swapon /dev/<swap_partition>~
+*** Swap Partition
+You format a partition as swap with following command
+$ ~mkswap /dev/<swap_partition>~
+Initialize swap partition
+~$ swapon /dev/<swap_partition>~
+
   
 * Installation
 You may want to maximize download speed from Arch mirrors to  
@@ -218,7 +251,7 @@ Another few useful packages to install at this point would be
 ~i7z~ extensive cpu monitor
 ~nvtop~ if you use nvidia graphics for gpu proccess and usage monitoring
 If you are setup the internet connection with ~wifi-menu~ you are probably
-relying on a wireless connection, to be able to have a connection until you   
+relying on a wireless connection, to be able to have a connection until you
 install graphical networking tools install ~netctl~ and ~dialog~ to get
 wi-fi menu for the install, note you may have to reinput network password  
   
@@ -229,16 +262,17 @@ Generate adjtime
 ~$ hwclock --systohc~
   
 Language Localization, this is for text rendering for American English  
-open locale with a text editor and uncomment  
+open locale with a text editor and uncomment these lines
 ~en_US.UTF-8~
 ~UTF-8~
+
 ~$ emacs /etc/locale.gen~
-  
+
 Generate the locale  
 ~$ locale-gen~
   
 Create locale.conf file and set the language accordingly  
-~$ LANG=en_US.UTF-8 > /etc/locale.conf~
+$ ~ echo LANG=en_US.UTF-8 > /etc/locale.conf~
   
 Add x32 Packages to pacman  
 Uncomment from ~/etc/pacman.conf~
@@ -377,8 +411,8 @@ kde-applications-meta   //KDE install all KDE applications as a dependency
   
 ** Applications
 Life is going to be difficult without a terminal ~konsole~ is the recommended
-but I prefer simple terminal ~st~
-~$ pacman -S st~   FIXME(mallchad) this is actually an AUR package, should  get konsole if using dolphin
+but I prefer simple alacritty
+~$ pacman -S alacritty~
   
 Life will also be easier with a decent file manager, I like KDE's dolphin  
 ~$ pacman -S dolphin~
@@ -387,7 +421,9 @@ You are most certainly going to miss a browser, get one now
 ~$ pacman -S chromium~
 Note: Later on this guide goes over the AUR briefly, after that you can install   
 the more normal ~google-chrome~ which has slightly more features that chromium
-and is more stable  
+and is more stable
+
+Personally I use firefox
   
 ***  Display Manager
 To start Plasma you need to use Xorg xinit/startx or a display manager  
@@ -399,18 +435,21 @@ To be able to configure SDDM in system settings install the kcm package
 ~$ pacman -S sddm-kcm~
   
 ***  Sound
-Personally in the system tray I prefer ~kmix to the default~ ~plasma-pa~
+plasma-pa is a package that provides sound control and applets for plasma
 ~$ pacman -S kmix~
   
 ***  Network
 To be able to configure and connect to networks from within the desktop   
 enviornment you should install ~plasma-nm~ wifi-menu requires root
 privillages and needs to be connected every boot so that is not ideal  
-~$ pacman -S plasma-nm~ FIXME(mallchad) NetworkManager service must be enabled to function, so must iwd
-FIXME(mallchad) also skipped over the fact that iwd, iw, and dhcpcd are pretty much neccecary to get wifi  
-working  
+~$ pacman -S plasma-nm~
+Startup will probably hang until a working network connection is reached
+You can change this by disabling the NetworkManager service that waits
+for online and replace it with the normal
+`systemctl disable --now NetworkManager-wait-online.service`
+`systemctl enable --now NetworkManager.service`
 *** Bluetooth
-If you want to be able to connect to bluetooth devices from within plasma  
+If you want to be able to connect to bluetooth devices plasma settings and systray
 then install the bluedevil package  
 ~$ pacman -S bluedevil~
   
