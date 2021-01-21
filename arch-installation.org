@@ -6,7 +6,7 @@ I do not recommend following this if you do not know me
 personally, however you are of course free to do so if you wish.   
 This guide is not actively maintained so it will not always be up to date,
 check the date of the latest commit to see if it's worth using.
-As always priorities the information on the Official Arch Wiki above all else.
+As always prioritize the information on the Official Arch Wiki above all else.
 The most important information is kept as up to date as physically possible.
   
 * Notes on the Guide
