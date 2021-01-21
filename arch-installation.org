@@ -84,7 +84,7 @@ In the case of factory new machines the time may have never been set.
 You can check if the service is active by running the following  
 ~$ timedatectl status~
   
-* Disk Setup
+* Disk Setup | Partitioning
 **  Traditional Method
 Verify and identify partitions and devices that you want to use  
 ~$ lsblk~
@@ -153,6 +153,30 @@ You can verify created logical volumes with this command
 *** Finishing Up
 You can now format and use the partitions as normal by finding the logical volume name in the ~/dev/~ directory
 ** Bcache
+** ZFS
+ZFS Is an advanced COW (Copy-on-Write) filesystem that incorporates many concepts
+and functionality into a single working piece of software.
+In effect, ZFS combines the functionality of a traditional filesystem, logical
+volume manager, backup management and data integrity progression and raid, this
+is a non-exhaustive list.
+
+Note:
+Due to incompatibilities between the CDDL software license ZFS uses and the GPL
+license the Linux kernel uses as well as legal concerns about the above, ZFS is
+not included in the mainlinux Linux kernel or the Arch Linux kernel.
+As a result, efforts on ZFS has to try to keep up with kernel development, this
+should not be a big deal as long as you don't update too often.
+
+*** Installation
+ZFS kernels and kernel modules are tied to specific kernel versions for
+stability and comparability reasons.
+~dkms~ versions exist to deal with this problem by facilitating rebuilding
+kernel modules 'out of source' on kernel update, allowing for more flexibility.
+
+~zfs-dkms~ provides a stable dkms version, to use this your kernel's respective
+~linux-headers~ package will need to be installed.
+
+
 * Format the partitions
 Format the root partition as ext4 filesystem  
 ~ext4~ is the recommended filesystem for normal linux installations
