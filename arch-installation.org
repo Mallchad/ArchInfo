@@ -167,6 +167,46 @@ not included in the mainlinux Linux kernel or the Arch Linux kernel.
 As a result, efforts on ZFS has to try to keep up with kernel development, this
 should not be a big deal as long as you don't update too often.
 
+Partitioning for the to create a ZFS partition and EFI partition in a traditional
+partitioning system is already covered in an above topic so it will no be repeated
+here.
+
+zpool creation
+It may be advisable to tell ZFS to assume a specific physical sector size when
+creating a zpool on a partition or device, ~-o ashift=9~ for 512 byte sector
+disks and ~-o ashift=12~ for 4096 sectors respectively.
+To find out your disk sector sizes you can run the following command
+~lsblk -o NAME,PHY-SEC~
+
+The following is an example of a zpool being created
+~zpool create -f -o ashift12 \
+         -O acltype=posixacl \
+         -O xattr=sa \
+         -O dnodesize=legacy \
+         -O normalization=formD \
+         -O mountpoint=none
+         -O canmount=off
+         -O devices=off
+         -R /mnt/
+         zroot /dev/nvme0n1p2 ~
+
+Additional Arguments
+~-O compression=lz4~ or ~-O compression=zstd=~
+Adds filesystem level compression support using the specified utility,
+trading off a little responsiveness.
+(lower latency access) for data throughput and disk usage reduction.
+This is generally best for slower drives where overall throughput is low and
+latency is high.
+GNU ~du~ has the argument ~--aparent-size~ to show the original size of a file.
+~-O encryption=aes-256-gcm~
+Encrypts the pool with the specified type.
+~-O keyformat=passphrase~
+Follow on argument, use passphrase based key encryption
+*** Sources and Furthur Reading
+[[https://wiki.archlinux.org/index.php/ZFS][ZFS - ArchWiki]]
+[[https://wiki.archlinux.org/index.php/Install_Arch_Linux_on_ZFS][Install Arch Linux on ZFS - ArchWiki]]
+
+
 *** Installation
 ZFS kernels and kernel modules are tied to specific kernel versions for
 stability and comparability reasons.
@@ -174,8 +214,42 @@ stability and comparability reasons.
 kernel modules 'out of source' on kernel update, allowing for more flexibility.
 
 ~zfs-dkms~ provides a stable dkms version, to use this your kernel's respective
-~linux-headers~ package will need to be installed.
+~linux-headres~ package will need to be installed, these packages also depend on
+~zfs-utils~.
 
+Pre-Install Setup
+To feasibly install ZFS on a fresh installation you need some way of supporting it
+from an installation medium since the official ISO will not support ZFS properly
+out of the box, nor does it have the capacity to set it up afterwards without
+using bind mounts.
+
+There are a few options, one is to use the [[https://github.com/eoli3n/archiso-zfs][archiso-zfs]] project, this extracts
+the running kernel version and finds a matching zfs module in the unofficial archzfs
+repositories, if this fails it will use a dkms build instead, this will grab
+linux-headers for the current kernel from the arch linux archive.
+
+To use archiso-zfs boot an archiso and run the following command
+curl -s https://eoli3n.github.io/archzfs/init | bash
+It should now be possible to setup your ZFS system from the archiso.
+NOTE: This is a temporary change and will not persist across reboots.
+
+Alternatively you can set up a normal Arch Linux install and use the
+~~arch-install-scripts~ to use the ~arch-chroot~ command as normal.
+This is easier to work with than creating a custom ISO and can be setup
+in as a recovery installation that you will probably want to hold onto in
+case any problems arise after a successful installation.
+
+ZFS has its own partitioning system so there is no need to set up specific
+partitioning system beyond one or two seperaate partitions for specific use
+cases like an EFI partition.
+A partition intended to container a ZFS filesystem should be of the type ~~bf00~
+or "Solaris Root".
+
+IMPORTANT:
+ZFS does not support swapfiles and there are reported to cause problems for some
+people, considering ZFS's ability to manage volumes and filesystem size easily and
+the ability to use swap volumes and partitions, not to mention mounting other
+filesystems like now, it is advisable to not use swap files.
 
 * Format the partitions
 Format the root partition as ext4 filesystem  
