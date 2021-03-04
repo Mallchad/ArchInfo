@@ -1,0 +1,18 @@
+#+Title: The Plan
+* Synopsis
+This is a personal file to keep track of how I want to set up my current system/systems.
+This is kind of like an extension to the informational text to outline what things I want
+to do and why I want to do them, and most importantly, what order, some tasks are harder
+to reverse than others and may end up a complete reset if the order is bad.
+
+The purpose of this project was to make a an Arch Linux installation guide that was 1 level removed from the Arch wiki, essentially more centralized information with slightly
+more specific, targeted descriptions.
+
+This file builds on that concept again and draws a plan, partially from the included
+guide to remove information that is unnecessary for my particular installation.
+
+If you are reading this file, I would suggest that you make your own one of these
+plans for your own installation, and back it up somewhere permanent like Google Drive,
+or GitHub so you have an idea of what you have done to your machine.
+
+* Step 1 | Setup the archiso enviornment
