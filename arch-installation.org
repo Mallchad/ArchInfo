@@ -530,7 +530,8 @@ drive, many do so you might as well install it
 ~$ pacman -S efibootmgr~
   
 Think of a name you want to see in the UEFI settings for  
-boot devices. Then install grub  
+boot devices, this is for the bootloader ID.
+ Then install grub with a command like the following
 ~$ grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB~
   
 Generate the grub configuration file this will search for  
@@ -547,7 +548,22 @@ paramaters with a space inbetween
 Note that this may slightly reduce battery life on laptops, this paramater is   
 here because ~intel_cstate=1~ being to high has been known to soft/hard-lock
 computers with intel cpus on linux  
+
+Generate the grub config
 ~$ grub-mkconfig -o /boot/grub/grub.cfg~
+This file I intended to be on the filesystem path ~/grub/grub.cfg~, from the
+root of the partition GRUB is on, usually the EFI partition.
+
+NOTE for ZFS:
+The generated grub.cfg uses some arbitrary "root" directory when specifying the
+root to change to, something like ~root=ZFS=root~
+This doesn't work and actually you want to specify the root dataset, something more
+akin to
+~root=ZFS=tank/root~
+
+NOTE:
+You can actually quite happily and easily edit the grub config
+
 * Reboot
 Exit the chroot enviorment  
 Ctrl-D  
