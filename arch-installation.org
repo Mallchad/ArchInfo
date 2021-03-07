@@ -565,10 +565,19 @@ NOTE:
 You can actually quite happily and easily edit the grub config
 
 * Reboot
-Exit the chroot enviorment  
+Just before rebooting you will probably want a to verify you have a few basic packages for the installation, the most important of which is an editor and internet related packages,
+like WiFi drivers and managers.
+e.g.
+~pacman -S vim networkmanager~
+
+Exit the chroot environment
 Ctrl-D  
 or  
 ~$ exit~
+Cleanup some loose ends like filesystem mounts
+~umount -a~
+NOTE for ZFS:
+~zfs umount -a~ may be necessary in some cases.
 Reboot the system  
 ~$ reboot~
 Remove the USB the Arch live media is on if neccecary before startup  
