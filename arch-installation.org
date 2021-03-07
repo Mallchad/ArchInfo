@@ -154,6 +154,13 @@ You can verify created logical volumes with this command
 You can now format and use the partitions as normal by finding the logical volume name in the ~/dev/~ directory
 ** Bcache
 ** ZFS
+WARNING:
+Before starting, you should know something very important, the archzfs versions
+of zfs kernels and dkms modules are *not* the same, one notable difference is the
+initramfs scripts, there are incompatibilities between the two, the extent of
+which is not yet clear.
+
+
 ZFS Is an advanced COW (Copy-on-Write) filesystem that incorporates many concepts
 and functionality into a single working piece of software.
 In effect, ZFS combines the functionality of a traditional filesystem, logical
@@ -165,63 +172,45 @@ Due to incompatibilities between the CDDL software license ZFS uses and the GPL
 license the Linux kernel uses as well as legal concerns about the above, ZFS is
 not included in the mainlinux Linux kernel or the Arch Linux kernel.
 As a result, efforts on ZFS has to try to keep up with kernel development, this
-should not be a big deal as long as you don't update too often.
+should not be a big deal as long as you don't update too often, expect ZFS to break
+if you update too often and too soon after new kernel releases especially, and take
+measures to reduce the impact, like having backups and snapshots and recovery
+environments on hand.
 
-Partitioning for the to create a ZFS partition and EFI partition in a traditional
+Partitioning for creating a ZFS partition and EFI partition in a traditional
 partitioning system is already covered in an above topic so it will no be repeated
 here.
 
-zpool creation
-It may be advisable to tell ZFS to assume a specific physical sector size when
-creating a zpool on a partition or device, ~-o ashift=9~ for 512 byte sector
-disks and ~-o ashift=12~ for 4096 sectors respectively.
-To find out your disk sector sizes you can run the following command
-~lsblk -o NAME,PHY-SEC~
-
-The following is an example of a zpool being created
-~zpool create -f -o ashift12 \
-         -O acltype=posixacl \
-         -O xattr=sa \
-         -O dnodesize=legacy \
-         -O normalization=formD \
-         -O mountpoint=none
-         -O canmount=off
-         -O devices=off
-         -R /mnt/
-         zroot /dev/nvme0n1p2 ~
-
-Additional Arguments
-~-O compression=lz4~ or ~-O compression=zstd=~
-Adds filesystem level compression support using the specified utility,
-trading off a little responsiveness.
-(lower latency access) for data throughput and disk usage reduction.
-This is generally best for slower drives where overall throughput is low and
-latency is high.
-GNU ~du~ has the argument ~--aparent-size~ to show the original size of a file.
-~-O encryption=aes-256-gcm~
-Encrypts the pool with the specified type.
-~-O keyformat=passphrase~
-Follow on argument, use passphrase based key encryption
 *** Sources and Furthur Reading
+The Man Page...
+This particular man page is fairly good and has basic amount of
+information on everything
 [[https://wiki.archlinux.org/index.php/ZFS][ZFS - ArchWiki]]
 [[https://wiki.archlinux.org/index.php/Install_Arch_Linux_on_ZFS][Install Arch Linux on ZFS - ArchWiki]]
-
+[[https://openzfs.github.io/openzfs-docs/Getting%20Started/Arch%20Linux/Arch%20Linux%20Root%20on%20ZFS.html?highlight=encryption][Arch Linux Root on ZFS]]
 
 *** Installation
 ZFS kernels and kernel modules are tied to specific kernel versions for
 stability and comparability reasons.
+NOTE:
+The below outlines things you have to do to setup ZFS on an existing install,
+this means if you are installing from scratch you should refer back to this section
+when you have reached a point when you can start modifying the installations.
+
 ~dkms~ versions exist to deal with this problem by facilitating rebuilding
 kernel modules 'out of source' on kernel update, allowing for more flexibility.
 
 ~zfs-dkms~ provides a stable dkms version, to use this your kernel's respective
-~linux-headres~ package will need to be installed, these packages also depend on
-~zfs-utils~.
+~linux-headers~ package will need to be installed, each of the respective binary
+kernels in the official Arch repositories have their own header package,
+for custom kernels just the regular header package should be sufficient, these packages also depend on the package
+~zfs-utils~
 
-Pre-Install Setup
-To feasibly install ZFS on a fresh installation you need some way of supporting it
+**** Pre-Install Setup
+To feasibly install ZFS on a fresh installation you need some way of managing it
 from an installation medium since the official ISO will not support ZFS properly
-out of the box, nor does it have the capacity to set it up afterwards without
-using bind mounts.
+out of the box, nor does the ISO by default have enough space to install and set
+up ZFS utilities.
 
 There are a few options, one is to use the [[https://github.com/eoli3n/archiso-zfs][archiso-zfs]] project, this extracts
 the running kernel version and finds a matching zfs module in the unofficial archzfs
@@ -229,7 +218,7 @@ repositories, if this fails it will use a dkms build instead, this will grab
 linux-headers for the current kernel from the arch linux archive.
 
 To use archiso-zfs boot an archiso and run the following command
-curl -s https://eoli3n.github.io/archzfs/init | bash
+~curl -s https://eoli3n.github.io/archzfs/init | bash~
 It should now be possible to setup your ZFS system from the archiso.
 NOTE: This is a temporary change and will not persist across reboots.
 
@@ -245,11 +234,140 @@ cases like an EFI partition.
 A partition intended to container a ZFS filesystem should be of the type ~~bf00~
 or "Solaris Root".
 
+**** zpool creation
+zpools are virtual storage containers which are made up of physical devices or partitions and metadata about the pool.
+It may be advisable to tell ZFS to assume a specific physical sector size when
+creating a zpool on a partition or device, ~-o ashift=9~ for 512 byte sector
+disks and ~-o ashift=12~ for 4096 sectors respectively.
+This is because modern drives often have larger physical than 512 byte sector sizes
+than they report, larger sector sizes can have various advances like performance
+improvement.
+To find out your reported disk sector sizes you can run the following command
+~lsblk -o NAME,PHY-SEC~
+
+The following is an example of a zpool being created
+#+begin_src bash
+zpool create -f -o ashift=12 \
+         -O acltype=posixacl \
+         -O xattr=sa \
+         -O dnodesize=legacy \
+         -O normalization=formD \
+         -O mountpoint=none \
+         -O devices=off \
+         -R /mnt/ \
+         zroot /dev/nvme0n1p2~
+#+end_src
+~<list_of_partitions>~
+Simply supplying more than one disk during zpool creation will create a
+RAID 0 array.
+This can be combined with ~mirror~ to create RAID 1+0 arrays.
+
+~mirror <list_of_mirror_partitions>~
+Creates a RAID 1 array with the supplied list of physical disks
+or partitions.
+**** Datasets
+ZFS does not have a concept of partitions in the traditional sense, instead it
+has datasets.
+Datasets have no fixed size which allows for more filesystem flexibility, these
+also have a multitude of options and attributes that can be applied to give
+unique properties to a dataset like compression and encryption.
+This allows for a more organic way to organize and manage filesystems, such
+as enabling directory wide file compression.
+
+At the very least there should be a root dataset due to inflexibility with placing
+data in the root of the pool (not to be confused with the root dataset).
+
+The following is an example of a command to create a dataset, the mountpoint
+can be unspecified for the root dataset since GRUB will assume it is root
+regardless.
+
 IMPORTANT:
 ZFS does not support swapfiles and there are reported to cause problems for some
 people, considering ZFS's ability to manage volumes and filesystem size easily and
 the ability to use swap volumes and partitions, not to mention mounting other
 filesystems like now, it is advisable to not use swap files.
+
+Creating a dataset
+The following is an example of a command to create some datasets
+~zfs create -o canmount=on -o mountpoint=none zroot/root~
+~zfs create -o canmount=on -o mountpoint=none zroot/data~
+
+Additional Arguments
+~-O compression=<lz4|zstd>~
+Adds filesystem level compression support using the specified utility,
+trading off a little responsiveness, depending on circumstance.
+(lower latency access) for data throughput and disk usage reduction.
+This is generally best for slower drives where overall throughput is low and
+latency is high.
+Simply specifying ~on~ as an argument will usually default to the zstd compressor.
+
+GNU ~du~ has the argument ~--aparent-size~ to show the original size of a file.
+~encryption=aes-256-gcm~
+Encrypts the pool with the specified type.
+~-O keyformat=passphrase~
+Follow on argument, use passphrase based key encryption
+
+~quota=<size>~
+Quotas can be imposed on filesystems, these put restrictions
+on the maximum of data can exist in the dataset, similar to traditional
+filesystems and partitions, the difference with ZFS being that they are
+arbitrary values and far easier to change on the fly.
+
+Generally it is recommended to have as many datasets as possible or
+tolerable, due to the fact that there is almost no downside to them
+and allows your filesystem to become more flexible with the different
+properties, limitations and management options you can apply to
+individual datasets.
+
+~dedup=on~
+ZFS supports data deduplication, for some very niche circumstances, like
+lots of wine bottles/prefixes and virtual machines derived from a common base,
+this is good in theory but in practice causes more problems then it solves, taking
+up exorbitant amounts of system memory and reducing performance, it is not that
+useful in practice.
+
+Encryption
+To setup encryption on a dataaset it both have both the ~encryption~ and the
+~keysource~ properties must be on the dataset prior to putting any data on
+it, data that is already present on the dataset when setting an encryption
+or compression will not be processes retro-actively.
+
+
+**** Configuring systemd ZFS mounts
+For the system to reboot properly the ~zfs.target~ service must be enabled.
+For each pool to be automatically mounted execute the following command
+~zpool set cachefile=/etc/zfs/zpool.cache <pool_name>~
+NOTE:
+The above section about cachefiles may be unnecessary in the latest versions
+of archzfs packages.
+Enable the systemd target
+~systemctl enable zfs.target --root=/mnt~
+NOTE:
+The ~--root~ argument operates directly on the specified root filesystem to
+allow you to perform operates on a systemd based system that is not currently
+running.
+The following services must also be enabled
+~zfs-import-cache~
+~zfs-mount~
+~zfs-import~
+
+Extra Considerations when Unmounting ZFS
+Legacy Unmount
+~umount /mnt/boot/efi~
+
+ZFS Unmount
+~zfs umount -a~
+zpool export zroot
+
+WARNING:
+If the zpool is not properly exported the pool will refuse to import in the initial
+ramdisk environment, leaving you stuck at the busybox terminal.
+
+NOTE:
+Since the initramfs will include ZFS it is actually possible to operate on the
+ZFS filesystem when you drop to the rescue shell,
+this can actually be done forcefully if you supply the ~break=premount~ to the
+kernel.
 
 * Format the partitions
 Format the root partition as ext4 filesystem  
@@ -293,7 +411,7 @@ $ ~mkswap /dev/<swap_partition>~
 Initialize swap partition
 ~$ swapon /dev/<swap_partition>~
 
-  
+
 * Installation
 You may want to maximize download speed from Arch mirrors to  
 make the installation as painless as possible  
