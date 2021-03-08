@@ -16,3 +16,150 @@ plans for your own installation, and back it up somewhere permanent like Google 
 or GitHub so you have an idea of what you have done to your machine.
 
 * Step 1 | Setup the archiso enviornment
+
+Connect to the internet
+~iwctl~
+Check for available stations (access points) and their SSID
+~station list~
+~station connect <some_router>~
+
+curl this repository.
+~curl -L https://github.com/Mallchad/ArchInfo/archive/v0.9.tar.gz~
+If a more recent release has come out and this part of the guide hasn't been
+updated you can replace ~v0.9~ with the name of the latest release/tag
+
+Set up arch zfs on the iso
+~curl -s https://eoli3n.github.io/archzfs/init | bash~
+
+Install convenience package
+~pacman -Sy tmux~
+
+Format the main partition for zfs
+#+begin_src bash
+zpool create -f -o ashift=12 \
+         -O acltype=posixacl \
+         -O xattr=sa \
+         -O dnodesize=legacy \
+         -O normalization=formD \
+         -O mountpoint=none \
+         -O devices=off \
+         -R /mnt/ \
+         zroot /dev/nvme0n1p2~
+#+end_src
+Create a dataset for every root director
+#+begin-src bash
+zfs create \
+-o canmount=on \
+-o encryption=on \
+-o compression=zstd \
+-o mountpoint=/
+zroot/root
+zfs create -o mountpoint=/etc zroot/root/etc
+zfs create -o mountpoint=/flood zroot/root/flood
+zfs create -o mountpoint=/home zroot/root/home
+zfs create -o mountpoint=/local zroot/root/local
+zfs create -o mountpoint=/mnt zroot/root/mnt
+zfs create -o mountpoint=/opt zroot/root/opt
+zfs create -o mountpoint=/rootzroot/root/root
+zfs create -o mountpoint=/tmp zroot/root/tmp
+zfs create -o mountpoint=/usr zroot/root/usr
+zfs create -o mountpoint=/var -o quota=50G zroot/root/var
+#+end_src
+Mount the filesystems
+~zfs mount zroot/root~
+pacstrap the system
+~pacstrap /mnt base linux-zen linux-firmware~
+
+ chroot into the system
+~arch-chroot /mnt/~
+Setup multilib and archzfs repositories
+~vim /etc/pacman.conf~
+Add below archzfs repo and uncomment multilib
+[archzfs]
+# Origin Server - France
+Server = http://archzfs.com/$repo/x86_64
+# Mirror - Germany
+Server = http://mirror.sum7.eu/archlinux/archzfs/$repo/x86_64
+# Mirror - Germany
+Server = https://mirror.biocrafting.net/archlinux/archzfs/$repo/x86_64
+# Mirror - India
+Server = https://mirror.in.themindsmaze.com/archzfs/$repo/x86_64
+# Mirror - US
+Server = https://zxcvfdsa.com/archzfs/$repo/$arch
+# Funsies somewhere above
+ILoveCandy
+
+Install a bunch of convenience and needed packages
+~pacman -S base-devel emacs vim vi nano tmux grub efibootmgr os-prober zsh~
+
+Create a hostname file and set a hostname
+~hostname <a_hostname> > /etc/hostnmae~
+
+Set the root password
+~passwd root~
+
+Create an admin user with a default home
+~useradd -mG wheel sudo kvm -s /bin/zsh mallchad~
+Set user password
+~passwd mallchad~
+
+Make sure WiFi manager is installed
+~pacman -S networkmanager~
+
+Create backup list of installed packages
+~mkdir /var/user~
+~pacman -Qqn > /var/user/post-chroot-pkglist~
+
+Add yourself to the sudoers file
+~visudo~
+Example line
+~mallchad ALL=ALL(ALL)~
+
+Exit chroot and copy this repository to new machine
+~mkdir /mnt/local/tmp~
+~cp -v archinfo /mnt/local/tmp~
+
+Reboot
+~exit~
+~umount -a~
+~zfs umount -a~
+~reboot~
+
+Login to user and use sudo for root privileged commands
+Enter tmux for convenience
+Setup internet again
+~systemctl enable --now NetworkManager.service~
+~systemctl disable --now NetworkManager-wait-online.service~
+...Just in-case
+
+Install a bunch of Xorg related packages
+~pacman -S xorg plasma-desktop dolphin konsole alacritty firefox qutebrowser nvidia-dkms \
+linux-zen-headers nvidia-utils lib32-nvidia-utils~
+
+Disable xorg mouse acceleration
+~vim 50-mouse-acceleration.conf~
+Insert the following
+~
+Section "InputClass"
+        Identifier "My Mouse"
+        MatchIsPointer "yes"
+        set the following to 1 1 0 respectively to disable acceleration.
+        Option "AccelerationNumerator" "1"
+        Option "AccelerationDenominator" "1"
+        Option "AccelerationThreshold" "0"
+EndSection
+~
+
+Install more packages
+~pacman -S plasma-nm plasma-pa bluedevil bluez bluez-utils pulseaudio pulseaudio-bluetooth \
+awesome~
+Write a .xinitrc
+~vim .xinitrc~
+Insert the following
+~KDEWM=awesome
+startplasma-x11~
+Full system upgrade
+~pacman -Syu~
+startx and set up rest of system like personal files dotfiles
+If everything works you can make a snapshot
+Take a backup of the pacman files again
