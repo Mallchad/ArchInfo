@@ -677,7 +677,7 @@ To be able to configure SDDM in system settings install the kcm package
   
 ***  Sound
 plasma-pa is a package that provides sound control and applets for plasma
-~$ pacman -S kmix~
+~$ pacman -S plasma-pa~
   
 ***  Network
 To be able to configure and connect to networks from within the desktop   
